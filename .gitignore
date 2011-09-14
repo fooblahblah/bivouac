@@ -1,0 +1,6 @@
+*~
+.target
+.scalaDepencencies
+bin
+target
+project
