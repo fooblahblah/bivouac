@@ -36,8 +36,8 @@ trait Bivouac extends BijectionsChunkJson with ConfigurableHttpClient {
     response.content map(parseAccount(_))
   }
 
-  def rooms: Future[Option[List[Room]]] = prepareClient.get[JValue](baseUri + "/rooms.json") map { response =>
-    response.content map { parseRooms(_) }
+  def rooms: Future[List[Room]] = prepareClient.get[JValue](baseUri + "/rooms.json") map { response =>
+    response.content map { parseRooms(_) } getOrElse(List())
   }
 
   def room(id: Int): Future[Option[Room]] = prepareClient.get[JValue](baseUri + "/room/" + id + ".json") map { response =>

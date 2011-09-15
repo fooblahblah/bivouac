@@ -54,9 +54,9 @@ object BivouacSpec extends Specification with Bivouac with HttpRequestHandlerCom
     }
 
     "Support rooms" in {
-      var res: Option[List[Room]] = None
+      var res: List[Room] = Nil
       rooms.map(res = _)
-      res must eventually(beSome(parseRooms(roomsArtifact)))
+      res must eventually(beEqual(parseRooms(roomsArtifact)))
       Logger.get.info(res.toString)
     }
 
@@ -84,7 +84,7 @@ object BivouacSpec extends Specification with Bivouac with HttpRequestHandlerCom
     "Support room" in {
       var res: Option[Room] = None
       room(roomId).map(res = _)
-      res must eventually(beSome(parseRoom((roomsArtifact \ "rooms" --> classOf[JArray]).elements.first)))
+      res must eventually(beSome(parseRoom((roomsArtifact \ "rooms" --> classOf[JArray]).elements.head)))
       Logger.get.info(res.toString)
     }
 
@@ -135,7 +135,7 @@ object BivouacSpec extends Specification with Bivouac with HttpRequestHandlerCom
     path("/room/33333.json") {
       produce(application/json) {
         get { request: HttpRequest[ByteChunk] =>
-          val r = JObject(JField("room", (roomsArtifact \ "rooms" --> classOf[JArray]).elements.first) :: Nil)
+          val r = JObject(JField("room", (roomsArtifact \ "rooms" --> classOf[JArray]).elements.head) :: Nil)
           HttpResponse[JValue](content = Some(r)).future
         }
       }
