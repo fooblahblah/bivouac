@@ -4,11 +4,15 @@ import blueeyes.concurrent.Future
 import blueeyes.core.data.BijectionsChunkJson
 import blueeyes.core.data.BijectionsChunkString
 import blueeyes.core.data.ByteChunk
+import blueeyes.core.http.HttpHeader
+import blueeyes.core.http.HttpHeaders
 import blueeyes.core.http.HttpHeaders.Authorization
 import blueeyes.core.http.HttpMethod
 import blueeyes.core.http.HttpMethods._
 import blueeyes.core.http.HttpRequest
+import blueeyes.core.http.HttpResponse
 import blueeyes.core.http.HttpStatusCodes._
+import blueeyes.core.http.HttpVersions._
 import blueeyes.core.http.MimeTypes._
 import blueeyes.core.service.ConfigurableHttpClient
 import blueeyes.json.JsonAST._
@@ -16,13 +20,8 @@ import blueeyes.json.JsonParser._
 import java.util.Date
 import net.lag.logging.Logger
 import org.apache.commons.codec.binary.Base64
-import blueeyes.core.http.HttpHeaders
-import blueeyes.core.http.HttpHeader
-import blueeyes.core.http.HttpVersions._
-import org.joda.time.format.DateTimeFormatter
 import org.joda.time.format.DateTimeFormat
-import blueeyes.core.http.HttpResponse
-import blueeyes.core.service.HttpClientByteChunk
+import org.joda.time.format.DateTimeFormatter
 
 trait Bivouac extends BijectionsChunkJson with ConfigurableHttpClient {
   private val _logger     = Logger.get
@@ -145,12 +144,12 @@ trait Bivouac extends BijectionsChunkJson with ConfigurableHttpClient {
   protected def parseRooms(jVal: JValue) = (jVal \ "rooms" --> classOf[JArray]).elements map { parseRoom(_) }
 
   protected def parseRoom(jObj: JValue) = Room(
-    id              = (jObj \ "id"               --> classOf[JInt]).value.toInt,
-    name            = (jObj \ "name"             --> classOf[JString]).value,
-    topic           = (jObj \ "topic"            --> classOf[JString]).value,
-    membershipLimit = (jObj \ "membership_limit" --> classOf[JInt]).value.toInt,
-    locked          = (jObj \ "locked"           --> classOf[JBool]).value,
-    users           = ((jObj \ "users"            -->? classOf[JArray]) map { _.elements map { parseUser(_) } }).getOrElse(Nil),
+    id              = (jObj \ "id"               -->  classOf[JInt]).value.toInt,
+    name            = (jObj \ "name"             -->  classOf[JString]).value,
+    topic           = (jObj \ "topic"            -->  classOf[JString]).value,
+    membershipLimit = (jObj \ "membership_limit" -->  classOf[JInt]).value.toInt,
+    locked          = (jObj \ "locked"           -->  classOf[JBool]).value,
+    users           = ((jObj \ "users"           -->? classOf[JArray]) map { _.elements map { parseUser(_) } }).getOrElse(Nil),
     createdAt       = _dateParser.parseDateTime((jObj \ "created_at" --> classOf[JString]).value).toDate,
     updatedAt       = _dateParser.parseDateTime((jObj \ "updated_at" --> classOf[JString]).value).toDate)
 

@@ -7,19 +7,19 @@ import blueeyes.core.http.HttpStatusCodes._
 import blueeyes.core.http.MimeTypes._
 import blueeyes.core.service.ConfigurableHttpClient
 import blueeyes.core.service.HttpClientByteChunk
-import blueeyes.core.service.RestPathPatternImplicits._
 import blueeyes.core.service.HttpRequestHandlerCombinators
 import blueeyes.core.service.HttpServiceDescriptor._
+import blueeyes.core.service.RestPathPatternImplicits._
 import blueeyes.concurrent.FutureImplicits
 import blueeyes.json.JsonAST._
 import blueeyes.json.JsonParser._
+import blueeyes.util.PartialFunctionCombinators
 import net.lag.configgy.Config
 import net.lag.logging.Logger
 import org.specs.Specification
-import org.specs.runner.JUnit4
 import org.specs.matcher.Matchers._
+import org.specs.runner.JUnit4
 import org.specs.util.TimeConversions._
-import blueeyes.util.PartialFunctionCombinators
 
 class BivouacTestSuite extends JUnit4(BivouacSpec)
 
