@@ -89,9 +89,9 @@ object BivouacSpec extends Specification with Bivouac with HttpRequestHandlerCom
     }
 
     "Support recent messages" in {
-      var res: Option[List[Message]] = None
+      var res: List[Message] = Nil
       recentMessages(roomId).map(res = _)
-      res must eventually(beSome(parseMessages(messagesArtifact)))
+      res must eventually(beEqual(parseMessages(messagesArtifact)))
       Logger.get.info(res.toString)
     }
 

@@ -52,13 +52,13 @@ trait Bivouac extends BijectionsChunkJson with ConfigurableHttpClient {
     response.status.code == OK
   }
 
-  def recentMessages(roomId: Int): Future[Option[List[Message]]] = prepareClient.get[JValue](baseUri + "/room/" + roomId + "/recent.json") map { response =>
-    response.content map { parseMessages(_) }
+  def recentMessages(roomId: Int): Future[List[Message]] = prepareClient.get[JValue](baseUri + "/room/" + roomId + "/recent.json") map { response =>
+    response.content map { parseMessages(_) } getOrElse(List())
   }
 
-  def live(roomId: Int) = httpClient.header(authorizationHeader).apply(HttpRequest(POST, streamingUri + "/room/" + roomId + "/live.json")) map { response =>
+  def live(roomId: Int, fn: (Message) => Unit) = httpClient.header(authorizationHeader).apply(HttpRequest(POST, streamingUri + "/room/" + roomId + "/live.json")) map { response =>
     response.content foreach { c =>
-      process(c, handleMessageChunk, () => { _logger.info("done") }, (e: Option[Throwable]) => _logger.error("error in chunk handling " + e))
+      process(c, handleMessageChunk(fn), () => { _logger.info("done") }, (e: Option[Throwable]) => _logger.error("error in chunk handling " + e))
     }
   } ifCanceled { e =>
     _logger.error("live stream canceled " + e)
@@ -93,16 +93,13 @@ trait Bivouac extends BijectionsChunkJson with ConfigurableHttpClient {
     }
   }
 
-  def handleMessageChunk(fragment: Array[Byte]) {
+  def handleMessageChunk(fn: (Message) => Unit)(fragment: Array[Byte]) {
     try {
       if(fragment.length > 1) {
         parse(new String(fragment)) match {
           case j @ JObject(_) => {
             val msg = parseMessage(j)
-            user(msg.userId) map { user =>
-              java.awt.Toolkit.getDefaultToolkit().beep()
-              _logger.info(user.get.name + " - " + msg.body)
-            }
+            fn(msg)
           }
           case _ =>
         }
