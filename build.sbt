@@ -9,7 +9,7 @@ scalaVersion := "2.9.1"
 scalacOptions ++= Seq("-deprecation", "-unchecked")
 
 libraryDependencies ++= Seq(
-  "com.reportgrid"          %% "blueeyes"      % "0.4.21" % "compile",
+  "com.reportgrid"          %% "blueeyes"      % "0.4.22" % "compile",
   "org.scala-tools.testing" %  "specs_2.9.0-1" % "1.6.8"  % "compile",
   "junit"                   %  "junit"         % "4.8.2"  % "compile"
 )

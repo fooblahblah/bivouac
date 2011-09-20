@@ -1,6 +1,6 @@
 *~
 .target
-.scalaDepencencies
+.scala_dependencies
 bin
 target
 project
