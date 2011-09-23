@@ -58,7 +58,7 @@ trait Bivouac extends BijectionsChunkJson with ConfigurableHttpClient {
 
   def live(roomId: Int, fn: (Message) => Unit) = httpClient.header(authorizationHeader).apply(HttpRequest(POST, streamingUri + "/room/" + roomId + "/live.json")) map { response =>
     response.content foreach { c =>
-      process(c, handleMessageChunk(fn), () => { _logger.info("done") }, (e: Option[Throwable]) => _logger.error("error in chunk handling " + e))
+      process(c, handleMessageChunk(fn), () => { _logger.debug("done") }, (e: Option[Throwable]) => _logger.error("error in chunk handling " + e))
     }
   } ifCanceled { e =>
     _logger.error("live stream canceled " + e)

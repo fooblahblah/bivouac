@@ -42,7 +42,7 @@ object BivouacSpec extends Specification with Bivouac with HttpRequestHandlerCom
   "Bivouac" should {
     "Form Authorization header with token" in {
       val h = authorizationHeader
-      Logger.get.info(h.toString)
+      Logger.get.debug(h.toString)
       h.toString must startWith("Authorization:")
     }
 
@@ -50,70 +50,70 @@ object BivouacSpec extends Specification with Bivouac with HttpRequestHandlerCom
       var res: Option[Account] = None
       account.map(res = _)
       res must eventually(beSome(parseAccount(accountArtifact)))
-      Logger.get.info(res.toString)
+      Logger.get.debug(res.toString)
     }
 
     "Support rooms" in {
       var res: List[Room] = Nil
       rooms.map(res = _)
       res must eventually(beEqual(parseRooms(roomsArtifact)))
-      Logger.get.info(res.toString)
+      Logger.get.debug(res.toString)
     }
 
     "Support presence" in {
       var res: Option[List[Room]] = None
       presence.map(res = _)
       res must eventually(beSome(parseRooms(roomsArtifact)))
-      Logger.get.info(res.toString)
+      Logger.get.debug(res.toString)
     }
 
     "Support users/me" in {
       var res: Option[User] = None
       me.map(res = _)
       res must eventually(beSome(parseUser(meArtifact)))
-      Logger.get.info(res.toString)
+      Logger.get.debug(res.toString)
     }
 
     "Support user by id" in {
       var res: Option[User] = None
       user(5555).map(res = _)
       res must eventually(beSome(parseUser(userArtifact)))
-      Logger.get.info(res.toString)
+      Logger.get.debug(res.toString)
     }
 
     "Support room" in {
       var res: Option[Room] = None
       room(roomId).map(res = _)
       res must eventually(beSome(parseRoom((roomsArtifact \ "rooms" --> classOf[JArray]).elements.head)))
-      Logger.get.info(res.toString)
+      Logger.get.debug(res.toString)
     }
 
     "Support recent messages" in {
       var res: List[Message] = Nil
       recentMessages(roomId).map(res = _)
       res must eventually(beEqual(parseMessages(messagesArtifact)))
-      Logger.get.info(res.toString)
+      Logger.get.debug(res.toString)
     }
 
     "Support joining a room" in {
       var res: Boolean = false
       joinRoom(roomId).map(res = _)
       res must eventually(beTrue)
-      Logger.get.info(res.toString)
+      Logger.get.debug(res.toString)
     }
 
     "Support leaving a room" in {
       var res: Boolean = false
       leaveRoom(roomId).map(res = _)
       res must eventually(beTrue)
-      Logger.get.info(res.toString)
+      Logger.get.debug(res.toString)
     }
 
     "Support posting a message" in {
       var res: Option[Message] = None
       speak(roomId, "Testing Bivouac API (please ignore)").map(res = _)
       res must eventually(beSomething)
-      Logger.get.info(res.toString)
+      Logger.get.debug(res.toString)
     }
   }
 
