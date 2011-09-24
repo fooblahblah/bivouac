@@ -3,4 +3,4 @@
 .scala_dependencies
 bin
 target
-project
+project/boot
