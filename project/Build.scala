@@ -37,7 +37,7 @@ object BivouacBuild extends Build {
   import Resolvers._
   import BuildSettings._
 
-  lazy val blueeyes = RootProject(uri("git://github.com/jdegoes/blueeyes.git"))
+  lazy val blueeyes = RootProject(uri("git://github.com/jdegoes/blueeyes.git#1f460702c79d2b9b900e30af6e0142ec87bb7ce5"))
 
   lazy val bivouac  = Project("root", file("."), settings = buildSettings ++ Seq(libraryDependencies := commonDeps, resolvers ++= customResolvers)) dependsOn(blueeyes)
 }
