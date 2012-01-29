@@ -1,3 +1,5 @@
 This is a Scala client API for Campfire.  The api uses BlueEyes for httpclient, Future and JSON support.
 
 There are decent API examples in the specs.
+
+Yes, I realize this is a lame README...
