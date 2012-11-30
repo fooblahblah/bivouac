@@ -1,6 +1,6 @@
 package org.fooblahblah.bivouac
 
-import blueeyes.concurrent.Future
+import akka.dispatch.Future
 import blueeyes.core.data.BijectionsChunkJson
 import blueeyes.core.data.BijectionsChunkString
 import blueeyes.core.data.ByteChunk
@@ -17,14 +17,14 @@ import blueeyes.core.http.MimeTypes._
 import blueeyes.core.service.ConfigurableHttpClient
 import blueeyes.json.JsonAST._
 import blueeyes.json.JsonParser._
+import com.weiglewilczek.slf4s.Logger
 import java.util.Date
-import net.lag.logging.Logger
 import org.apache.commons.codec.binary.Base64
 import org.joda.time.format.DateTimeFormat
 import org.joda.time.format.DateTimeFormatter
 
 trait Bivouac extends BijectionsChunkJson with ConfigurableHttpClient {
-  private val _logger     = Logger.get
+  private val _logger     = Logger("bivouac")
   private val _dateParser = DateTimeFormat.forPattern("yyyy/MM/dd HH:mm:ss Z")
 
   protected def config: CampfireConfig
@@ -60,9 +60,10 @@ trait Bivouac extends BijectionsChunkJson with ConfigurableHttpClient {
     response.content foreach { c =>
       process(c, handleMessageChunk(fn), () => { _logger.debug("done") }, (e: Option[Throwable]) => _logger.error("error in chunk handling " + e))
     }
-  } ifCanceled { e =>
-    _logger.error("live stream canceled " + e)
-    e.get.printStackTrace()
+  } onFailure {
+    case e : Throwable =>
+      _logger.error("live stream canceled " + e)
+      e.printStackTrace()
   }
 
   def speak(roomId: Int, message: String) = prepareClient.post[JValue](baseUri + "/room/" + roomId + "/speak.json")(Speak(message).toJSON) map { response =>
@@ -87,8 +88,11 @@ trait Bivouac extends BijectionsChunkJson with ConfigurableHttpClient {
     chunk.next match {
       case None => done()
       case Some(e) => {
-        e.deliverTo(nextChunk => process(nextChunk, f, done, error))
-        e.ifCanceled(e => error(e))
+        e.map(nextChunk => process(nextChunk, f, done, error))
+//        e.onFailure {
+          // case e: Throwable =>
+          //   error(Some(e))
+//        }
       }
     }
   }
@@ -105,7 +109,7 @@ trait Bivouac extends BijectionsChunkJson with ConfigurableHttpClient {
         }
       }
     } catch {
-      case _ =>
+      case _ : Throwable =>
     }
   }
 
@@ -159,11 +163,11 @@ trait Bivouac extends BijectionsChunkJson with ConfigurableHttpClient {
     userType  = (jObj \\ "type"             --> classOf[JString]).value,
     createdAt = _dateParser.parseDateTime((jObj \\ "created_at" --> classOf[JString]).value).toDate)
 
-  protected def authorizationHeader = HttpHeader("Authorization", "Basic " + basicAuthCredentials)
+  protected lazy val authorizationHeader = HttpHeaders.Authorization("Basic " + basicAuthCredentials)
 
-  protected def prepareClient = httpClient.contentType(application/json).header(authorizationHeader)
+  protected lazy val  prepareClient = httpClient.contentType(application/json).header(authorizationHeader)
 
-  protected def basicAuthCredentials = new String(Base64.encodeBase64((config.token + ":X").getBytes))
+  protected lazy val basicAuthCredentials = new String(Base64.encodeBase64((config.token + ":X").getBytes))
 }
 
 case class CampfireConfig(token: String, domain: String)
@@ -179,4 +183,3 @@ case class Speak(message: String) {
 }
 
 case class User(id: Int, name: String, email: String, admin: Boolean, avatarUrl: String, userType: String, createdAt: Date)
-

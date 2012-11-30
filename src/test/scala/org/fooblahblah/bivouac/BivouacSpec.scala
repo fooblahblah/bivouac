@@ -1,48 +1,37 @@
 package org.fooblahblah.bivouac
 
+import akka.dispatch.Future
+import akka.dispatch.Futures
+import blueeyes.Environment
 import blueeyes.core.data.ByteChunk
+import blueeyes.core.data.BijectionsChunkFutureJson
 import blueeyes.core.http.HttpRequest
 import blueeyes.core.http.HttpResponse
 import blueeyes.core.http.HttpStatusCodes._
 import blueeyes.core.http.MimeTypes._
-import blueeyes.core.service.ConfigurableHttpClient
 import blueeyes.core.service.HttpClientByteChunk
 import blueeyes.core.service.HttpRequestHandlerCombinators
-import blueeyes.core.service.HttpServiceDescriptor._
-import blueeyes.core.service.RestPathPatternImplicits._
-import blueeyes.concurrent.FutureImplicits
 import blueeyes.json.JsonAST._
 import blueeyes.json.JsonParser._
-import blueeyes.util.PartialFunctionCombinators
-import net.lag.configgy.Config
-import net.lag.logging.Logger
-import org.specs.Specification
-import org.specs.matcher.Matchers._
-import org.specs.runner.JUnit4
-import org.specs.util.TimeConversions._
+import com.weiglewilczek.slf4s.Logger
+import org.specs2.matcher.Matchers._
+import org.specs2.mutable.Specification
+import org.specs2.time.TimeConversions._
 
-class BivouacTestSuite extends JUnit4(BivouacSpec)
 
-object BivouacSpec extends Specification with Bivouac with HttpRequestHandlerCombinators with FutureImplicits with PartialFunctionCombinators {
+class BivouacSpec extends Specification with Bivouac with HttpRequestHandlerCombinators {
 
-  val configuration = """
-    log {
-      level   = "info"
-      console = true
-    }
-  """
-  val logConfig  = Config.fromString(configuration)
-  Logger.configure(logConfig.configMap("log"), false, true)
-
-  sys.props.put(ConfigurableHttpClient.HttpClientSwitch, "true")
+  val logger = Logger("bivouacSpec")
 
   val config = CampfireConfig("123456", "foo")
   val roomId = 33333
 
+  sys.props.put(Environment.MockSwitch, "true")
+
   "Bivouac" should {
     "Form Authorization header with token" in {
       val h = authorizationHeader
-      Logger.get.debug(h.toString)
+      logger.debug(h.toString)
       h.toString must startWith("Authorization:")
     }
 
@@ -50,85 +39,87 @@ object BivouacSpec extends Specification with Bivouac with HttpRequestHandlerCom
       var res: Option[Account] = None
       account.map(res = _)
       res must eventually(beSome(parseAccount(accountArtifact)))
-      Logger.get.debug(res.toString)
+      logger.debug(res.toString)
     }
 
     "Support rooms" in {
       var res: List[Room] = Nil
       rooms.map(res = _)
-      res must eventually(beEqual(parseRooms(roomsArtifact)))
-      Logger.get.debug(res.toString)
+      res must eventually(be_==(parseRooms(roomsArtifact)))
+      logger.debug(res.toString)
     }
 
     "Support presence" in {
       var res: Option[List[Room]] = None
       presence.map(res = _)
       res must eventually(beSome(parseRooms(roomsArtifact)))
-      Logger.get.debug(res.toString)
+      logger.debug(res.toString)
     }
 
     "Support users/me" in {
       var res: Option[User] = None
       me.map(res = _)
       res must eventually(beSome(parseUser(meArtifact)))
-      Logger.get.debug(res.toString)
+      logger.debug(res.toString)
     }
 
     "Support user by id" in {
       var res: Option[User] = None
       user(5555).map(res = _)
       res must eventually(beSome(parseUser(userArtifact)))
-      Logger.get.debug(res.toString)
+      logger.debug(res.toString)
     }
 
     "Support room" in {
       var res: Option[Room] = None
       room(roomId).map(res = _)
       res must eventually(beSome(parseRoom((roomsArtifact \ "rooms" --> classOf[JArray]).elements.head)))
-      Logger.get.debug(res.toString)
+      logger.debug(res.toString)
     }
 
     "Support recent messages" in {
       var res: List[Message] = Nil
       recentMessages(roomId).map(res = _)
-      res must eventually(beEqual(parseMessages(messagesArtifact)))
-      Logger.get.debug(res.toString)
+      res must eventually(be_==(parseMessages(messagesArtifact)))
+      logger.debug(res.toString)
     }
 
     "Support joining a room" in {
       var res: Boolean = false
       joinRoom(roomId).map(res = _)
       res must eventually(beTrue)
-      Logger.get.debug(res.toString)
+      logger.debug(res.toString)
     }
 
     "Support leaving a room" in {
       var res: Boolean = false
       leaveRoom(roomId).map(res = _)
       res must eventually(beTrue)
-      Logger.get.debug(res.toString)
+      logger.debug(res.toString)
     }
 
     "Support posting a message" in {
       var res: Option[Message] = None
       speak(roomId, "Testing Bivouac API (please ignore)").map(res = _)
-      res must eventually(beSomething)
-      Logger.get.debug(res.toString)
+      res must eventually(beSome[Message])
+      logger.debug(res.toString)
     }
   }
+
+  import blueeyes.core.data.BijectionsChunkFutureJson._
 
   override val mockServer =
     path("/account.json") {
       produce(application/json) {
         get { request: HttpRequest[ByteChunk] =>
-          HttpResponse[JValue](content = Some(accountArtifact)).future
+          Future(HttpResponse[JValue](content = Some(accountArtifact)))
         }
       }
     } ~
     path("/rooms.json") {
       produce(application/json) {
         get { request: HttpRequest[ByteChunk] =>
-          HttpResponse[JValue](content = Some(roomsArtifact)).future
+          Future(HttpResponse[JValue](content = Some(roomsArtifact)))
         }
       }
     } ~
@@ -136,63 +127,70 @@ object BivouacSpec extends Specification with Bivouac with HttpRequestHandlerCom
       produce(application/json) {
         get { request: HttpRequest[ByteChunk] =>
           val r = JObject(JField("room", (roomsArtifact \ "rooms" --> classOf[JArray]).elements.head) :: Nil)
-          HttpResponse[JValue](content = Some(r)).future
+          Future(HttpResponse[JValue](content = Some(r)))
         }
       }
     } ~
     path("/room/33333/recent.json") {
       produce(application/json) {
         get { request: HttpRequest[ByteChunk] =>
-          HttpResponse[JValue](content = Some(messagesArtifact)).future
+          Future(HttpResponse[JValue](content = Some(messagesArtifact)))
         }
       }
     } ~
     path("/room/33333/join.json") {
       produce(application/json) {
         post { request: HttpRequest[ByteChunk] =>
-          HttpResponse[JValue]().future
+          Future(HttpResponse[JValue]())
         }
       }
     } ~
     path("/room/33333/leave.json") {
       produce(application/json) {
         post { request: HttpRequest[ByteChunk] =>
-          HttpResponse[JValue]().future
+          Future(HttpResponse[JValue]())
         }
       }
     } ~
     path("/room/33333/speak.json") {
       jvalue {
-        post { request: HttpRequest[JValue] =>
-          val msg = JObject(JField("message", JObject(
-              JField("id", JInt(1234)) ::
-              JField("user_id", JInt(1234)) ::
-              JField("room_id", JInt(roomId)) ::
-              JField("type", JString("TextMessage")) ::
-              JField("created_at", JString("2011/09/14 21:20:11 +0000")) ::
-              JField("body", JString((request.content.get \\ "body" --> classOf[JString]).value)) :: Nil)) :: Nil)
-          HttpResponse[JValue](status = Created, content = Some(msg)).future
+        post { request: HttpRequest[Future[JValue]] =>
+          request.content match {
+            case Some(future) =>
+            future.map { c =>
+              val msg = JObject(JField("message", JObject(
+                JField("id", JInt(1234)) ::
+                JField("user_id", JInt(1234)) ::
+                JField("room_id", JInt(roomId)) ::
+                JField("type", JString("TextMessage")) ::
+                JField("created_at", JString("2011/09/14 21:20:11 +0000")) ::
+                JField("body", JString((c \\ "body" --> classOf[JString]).value)) :: Nil)) :: Nil)
+              HttpResponse[JValue](status = Created, content = Some(msg))
+            }
+            case None =>
+            Future(HttpResponse[JValue](content = None))
+          }
         }
       }
     } ~
     path("/presence.json") {
       produce(application/json) {
         get { request: HttpRequest[ByteChunk] =>
-          HttpResponse[JValue](content = Some(roomsArtifact)).future
+          Future(HttpResponse[JValue](content = Some(roomsArtifact)))
         }
       }
     } ~
     path("/users/me.json") {
       produce(application/json) {
         get { request: HttpRequest[ByteChunk] =>
-          HttpResponse[JValue](content = Some(meArtifact)).future
+          Future(HttpResponse[JValue](content = Some(meArtifact)))
         }
       }
     } ~
     path("/users/5555.json") {
       produce(application/json) {
         get { request: HttpRequest[ByteChunk] =>
-          HttpResponse[JValue](content = Some(userArtifact)).future
+          Future(HttpResponse[JValue](content = Some(userArtifact)))
         }
       }
     }
