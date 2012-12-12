@@ -128,29 +128,29 @@ trait Bivouac {
   }
 
   def live(roomId: Int, fn: (Message) => Unit) = {
-    implicit val futureTimeout = Timeout(5 seconds)
 
-    def connect(target: ActorRef) {
-      def tryConnect() = {
-        target ? Connect onFailure {
-          case e: Throwable =>
-            logger.warning("Failed to connect", e)
-            connect(target)
-        }
+    class Streamer extends Actor {
+      var retrying: Boolean = false
+
+      def reconnect() {
+        retrying = true
+        logger.info("Retrying connection in 3s ...")
+        system.scheduler.scheduleOnce(3 seconds, self, Connect)
       }
 
-      system.scheduler.scheduleOnce(3 seconds)(tryConnect)
-    }
-
-    val streamer = actor(new Act {
-      become {
+      def receive = {
         case Connect =>
           logger.info(s"Attempting to connect: ${streamingHostName}")
           streamingClient ! Connect(streamingHostName, 443, HttpClient.SslEnabled)
           sender ! true
 
+        case Status.Failure(reason) =>
+          logger.info(s"Failed to connect: ${reason}")
+          reconnect()
+
         case Connected(connection) =>
           logger.info(s"Connected to stream: ${streamingHostName}")
+          retrying = false
           val request = HttpRequest(method = HttpMethods.GET, uri = s"/room/${roomId}/live.json", headers = Authorization(authorizationCreds) :: Nil)
           connection.handler ! request
 
@@ -161,14 +161,15 @@ trait Bivouac {
 
         case Closed(reason) =>
           logger.info(s"Connection closed: ${reason}")
-          connect(self)
+          if(!retrying) reconnect()
 
         case m =>
           logger.info(s"${m}")
       }
-    })
+    }
 
-    connect(streamer)
+    val streamer = system.actorOf(Props(new Streamer), "streamer")
+    streamer ! Connect
 
     Future(true)
   }
@@ -178,10 +179,12 @@ trait Bivouac {
 object Bivouac {
   import HttpConduit._
   import SSLContextProvider._
+  import scala.util.control.Exception._
 
   def apply() = new Bivouac {
-    val config         = ConfigFactory.load
-    val campfireConfig = CampfireConfig(config.getString("token"), config.getString("domain"))
+    val config           = ConfigFactory.load
+    val campfireConfig   = CampfireConfig(config.getString("token"), config.getString("domain"))
+    val reconnectTimeout = failAsValue(classOf[Exception])(config.getInt("reconnect-timeout"))(5)
 
     val ioBridge = IOExtension(system).ioBridge
     val httpClient = system.actorOf(Props(new HttpClient(ioBridge)))
