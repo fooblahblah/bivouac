@@ -1,6 +1,7 @@
 package org.fooblahblah.bivouac
 
 import java.util.concurrent.TimeUnit
+import model.Model._
 import org.junit.runner._
 import org.specs2.matcher.Matchers._
 import org.specs2.mutable.Specification
@@ -91,7 +92,6 @@ class BivouacSpec extends Specification with Bivouac {
 
 
   val pipeline = { request: HttpRequest =>
-    import CampfireJsonProtocol._
     import HttpMethods._
 
     val firstRoom = Json.obj("room" -> (Json.parse(roomsArtifact) \ "rooms")(0))
