@@ -1,4 +1,10 @@
-This is a Scala client API for Campfire.  The api uses BlueEyes for httpclient, Future and JSON support.
+This is a Scala client API for Campfire.
+
+Dependencies:
+- spray.io
+- scala 2.10
+- akka 2.1
+- play 2.1
 
 There are decent API examples in the specs.
 
