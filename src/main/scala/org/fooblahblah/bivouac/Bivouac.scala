@@ -37,16 +37,16 @@ trait Bivouac {
 
   protected def campfireConfig: CampfireConfig
 
-  protected def pipeline: HttpRequest => Future[HttpResponse]
+  protected def client: HttpRequest => Future[HttpResponse]
 
   protected def streamingClient: ActorRef
 
 
-  def GET(uri: String) = pipeline(HttpRequest(method = HttpMethods.GET, uri = uri))
+  def GET(uri: String) = client(HttpRequest(method = HttpMethods.GET, uri = uri))
 
-  def POST(uri: String, body: HttpEntity = EmptyEntity) = pipeline(HttpRequest(method = HttpMethods.POST, uri = uri, entity = body))
+  def POST(uri: String, body: HttpEntity = EmptyEntity) = client(HttpRequest(method = HttpMethods.POST, uri = uri, entity = body))
 
-  def PUT(uri: String, body: HttpEntity = EmptyEntity) = pipeline(HttpRequest(method = HttpMethods.PUT, uri = uri, entity = body))
+  def PUT(uri: String, body: HttpEntity = EmptyEntity) = client(HttpRequest(method = HttpMethods.PUT, uri = uri, entity = body))
 
 
   def account: Future[Option[Account]] = GET("/account.json") map { response =>
@@ -127,31 +127,48 @@ trait Bivouac {
     }
   }
 
-
   def live(roomId: Int, fn: (Message) => Unit) = {
     implicit val futureTimeout = Timeout(5 seconds)
+
+    def connect(target: ActorRef) {
+      def tryConnect() = {
+        target ? Connect onFailure {
+          case e: Throwable =>
+            logger.warning("Failed to connect", e)
+            connect(target)
+        }
+      }
+
+      system.scheduler.scheduleOnce(3 seconds)(tryConnect)
+    }
 
     val streamer = actor(new Act {
       become {
         case Connect =>
+          logger.info(s"Attempting to connect: ${streamingHostName}")
           streamingClient ! Connect(streamingHostName, 443, HttpClient.SslEnabled)
+          sender ! true
 
         case Connected(connection) =>
-          logger.info("Connected to stream")
+          logger.info(s"Connected to stream: ${streamingHostName}")
           val request = HttpRequest(method = HttpMethods.GET, uri = s"/room/${roomId}/live.json", headers = Authorization(authorizationCreds) :: Nil)
           connection.handler ! request
 
         case m: MessageChunk if(!m.bodyAsString.trim.isEmpty) =>
-          fn(parse(m.bodyAsString.trim).as[Message])
+          m.bodyAsString.trim split(13.toChar) map(json => fn(parse(json).as[Message]))
 
         case MessageChunk(_, _) =>
+
+        case Closed(reason) =>
+          logger.info(s"Connection closed: ${reason}")
+          connect(self)
 
         case m =>
           logger.info(s"${m}")
       }
     })
 
-    streamer ! Connect
+    connect(streamer)
 
     Future(true)
   }
@@ -174,14 +191,15 @@ object Bivouac {
       name = "http-conduit"
     )
 
-    val pipeline =
+    val client =
       addCredentials(authorizationCreds) ~>
       sendReceive(conduit)
 
     val clientConfig = """
       spray.can.client.ssl-encryption = on
       spray.can.client.response-chunk-aggregation-limit = 0
-      spray.can.client.idle-timeout = 0
+      spray.can.client.idle-timeout = 10s
+      spray.can.client.request-timeout = 0s
       """
     val settings = ClientSettings(ConfigFactory.parseString(clientConfig))
     val streamingClient = system.actorOf(props = Props(

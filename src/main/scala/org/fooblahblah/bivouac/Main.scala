@@ -25,14 +25,17 @@ object TestApp {
     def printRecent(roomId: Int) =
       recentMessages(roomId) map (println)
 
+//    val roomId = 537356 // data_engineering
+    val roomId = 399408 // Test
+
     for {
 //      _ <- printMe
 //      _ <- printRooms
-      _ <- printRoom(534291)
+      _ <- printRoom(roomId)
 //      _ <- printRecent(497180)
-      _ <- leaveRoom(534291)
-      _ <- joinRoom(534291)
-      _ <- live(534291, println)
+      _ <- leaveRoom(roomId)
+      _ <- joinRoom(roomId)
+      _ <- live(roomId, println)
     } yield true //sys.exit
   }
 }

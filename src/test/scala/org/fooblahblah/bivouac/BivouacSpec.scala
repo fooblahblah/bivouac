@@ -95,7 +95,7 @@ class BivouacSpec extends Specification with Bivouac {
   }
 
 
-  val pipeline = { request: HttpRequest =>
+  val client = { request: HttpRequest =>
     import HttpMethods._
 
     val firstRoom = Json.obj("room" -> (Json.parse(roomsArtifact) \ "rooms")(0))
