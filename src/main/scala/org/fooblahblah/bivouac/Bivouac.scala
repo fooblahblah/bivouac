@@ -114,9 +114,11 @@ trait Bivouac {
     }
   }
 
+
   def speak(roomId: Int, message: String) = POST(s"/room/${roomId}/speak.json") map { response =>
     response.status == StatusCodes.Created
   }
+
 
   def recentMessages(roomId: Int): Future[List[Message]] = GET(s"/room/${roomId}/recent.json") map { response =>
     response.status match {
@@ -124,6 +126,7 @@ trait Bivouac {
       case _              => Nil
     }
   }
+
 
   def live(roomId: Int, fn: (Message) => Unit) = {
     implicit val futureTimeout = Timeout(5 seconds)
