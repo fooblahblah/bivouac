@@ -22,10 +22,14 @@ object TestApp {
     def printRoom(roomId: Int) =
       room(roomId) map (println)
 
+    def printRecent(roomId: Int) =
+      recentMessages(roomId) map (println)
+
     for {
       _ <- printMe
 //      _ <- printRooms
       _ <- printRoom(497180)
+      _ <- printRecent(497180)
       _ <- Future(println("terminating..."))
     } yield sys.exit
   }

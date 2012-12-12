@@ -51,23 +51,14 @@ trait Bivouac {
       case StatusCodes.OK => parse(response.entity.asString).as[List[Room]]
       case _              => List()
     }
-  } recover {
-    case e: Throwable =>
-      e.printStackTrace()
-      List()
   }
 
 
   def room(id: Int): Future[Option[Room]] = GET(s"/room/${id}.json") map { response =>
-    println(response.entity.asString)
     response.status match {
       case StatusCodes.OK => Some((parse(response.entity.asString) \ "room").as[Room])
       case _              => None
     }
-  } recover {
-    case e: Throwable =>
-      e.printStackTrace()
-      None
   }
 
 
@@ -112,10 +103,17 @@ trait Bivouac {
     }
   }
 
-//  def recentMessages(roomId: Int): Future[List[Message]] = prepareClient.get[JValue](baseUri + "/room/" + roomId + "/recent.json") map { response =>
-//    response.content map { parseMessages(_) } getOrElse(List())
-//  }
-//
+  def speak(roomId: Int, message: String) = POST(s"/room/${roomId}/speak.json") map { response =>
+    response.status == StatusCodes.Created
+  }
+
+  def recentMessages(roomId: Int): Future[List[Message]] = GET(s"/room/${roomId}/recent.json") map { response =>
+    response.status match {
+      case StatusCodes.OK => parse(response.entity.asString).as[List[Message]]
+      case _              => Nil
+    }
+  }
+
 //  def live(roomId: Int, fn: (Message) => Unit) = httpClient.header(authorizationHeader).apply(HttpRequest(POST, streamingUri + "/room/" + roomId + "/live.json")) map { response =>
 //    response.content foreach { c =>
 //      process(c, handleMessageChunk(fn), () => { _logger.debug("done") }, (e: Option[Throwable]) => _logger.error("error in chunk handling " + e))
@@ -124,10 +122,6 @@ trait Bivouac {
 //    case e : Throwable =>
 //      _logger.error("live stream canceled " + e)
 //      e.printStackTrace()
-//  }
-//
-//  def speak(roomId: Int, message: String) = prepareClient.post[JValue](baseUri + "/room/" + roomId + "/speak.json")(Speak(message).toJSON) map { response =>
-//    response.content.map(j => parseMessage(j \ "message"))
 //  }
 //
 //  protected def process(chunk: ByteChunk, f: Array[Byte] => Unit, done: () => Unit, error: Option[Throwable] => Unit) {
@@ -193,7 +187,7 @@ case class CampfireConfig(token: String, domain: String)
 
 case class Account(id: Int, name: String, subDomain: String, plan: String, ownerId: Int, timezone: String, createdAt: Date, updatedAt: Date)
 
-case class Message(id: Int, roomId: Int, userId: Int, messageType: String, body: String, createdAt: Date)
+case class Message(id: Int, roomId: Int, userId: Option[Int], messageType: String, body: Option[String], createdAt: Date)
 
 case class Room(id: Int, name: String, topic: String, membershipLimit: Int, locked: Boolean, createdAt: Date, updatedAt: Date, users: Option[List[User]] = None)
 
@@ -205,6 +199,7 @@ case class User(id: Int, name: String, email: String, admin: Boolean, avatarUrl:
 
 
 object CampfireJsonProtocol {
+  import util.json.FormatExt._
   import play.api.libs.json.Reads._
   import play.api.libs.json.util._
   import play.api.libs.functional.syntax._
@@ -246,4 +241,14 @@ object CampfireJsonProtocol {
 
   implicit val listRoomReads: Reads[List[Room]] = ((__ \ "rooms").read(list[Room]))
 
+
+  implicit val messageReads: Reads[Message] = (
+    (__ \ "id").read[Int] ~
+    (__ \ "room_id").read[Int] ~
+    (__ \ "user_id").readNullableOpt[Int] ~
+    (__ \ "type").read[String] ~
+    (__ \ "body").readNullableOpt[String] ~
+    (__ \ "created_at").read[Date](customDateReads))(Message)
+
+  implicit val listMessageReads: Reads[List[Message]] = ((__ \ "messages").read(list[Message]))
 }

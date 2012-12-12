@@ -78,20 +78,15 @@ class BivouacSpec extends Specification with Bivouac {
       result === true
     }
 
-//
-//    "Support recent messages" in {
-//      var res: List[Message] = Nil
-//      recentMessages(roomId).map(res = _)
-//      res must eventually(be_==(parseMessages(messagesArtifact)))
-//      logger.debug(res.toString)
-//    }
-//
-//    "Support posting a message" in {
-//      var res: Option[Message] = None
-//      speak(roomId, "Testing Bivouac API (please ignore)").map(res = _)
-//      res must eventually(beSome[Message])
-//      logger.debug(res.toString)
-//    }
+    "Support posting a message" in {
+      val result = Await.result(speak(roomId, "this is a test message"), Duration(1, TimeUnit.SECONDS))
+      result === true
+    }
+
+    "Support recent messages" in {
+      val result = Await.result(recentMessages(roomId), Duration(1, TimeUnit.SECONDS))
+      result.map(_.id) === List(1,2,3,4,5)
+    }
   }
 
 
@@ -102,16 +97,18 @@ class BivouacSpec extends Specification with Bivouac {
     val firstRoom = Json.obj("room" -> (Json.parse(roomsArtifact) \ "rooms")(0))
 
     (request.method, request.uri) match {
-      case (GET,  "/account.json")          => Future.successful(HttpResponse(status = StatusCodes.OK, entity = HttpBody(accountArtifact)))
-      case (GET,  "/rooms.json")            => Future.successful(HttpResponse(status = StatusCodes.OK, entity = HttpBody(roomsArtifact)))
-      case (GET,  "/room/22222.json")       => Future.successful(HttpResponse(status = StatusCodes.OK, entity = HttpBody(firstRoom.toString)))
-      case (POST, "/room/22222/join.json")  => Future.successful(HttpResponse(status = StatusCodes.OK))
-      case (POST, "/room/22222/leave.json") => Future.successful(HttpResponse(status = StatusCodes.OK))
-      case (PUT,  "/room/22222.json")       => Future.successful(HttpResponse(status = StatusCodes.OK))
-      case (GET,  "/presence.json")         => Future.successful(HttpResponse(status = StatusCodes.OK, entity = HttpBody(roomsArtifact)))
-      case (GET,  "/users/me.json")         => Future.successful(HttpResponse(status = StatusCodes.OK, entity = HttpBody(meArtifact)))
-      case (GET,  "/users/5555.json")       => Future.successful(HttpResponse(status = StatusCodes.OK, entity = HttpBody(userArtifact)))
-      case _                                => Future.successful(HttpResponse(status = StatusCodes.NotFound))
+      case (GET,  "/account.json")           => Future.successful(HttpResponse(status = StatusCodes.OK, entity = HttpBody(accountArtifact)))
+      case (GET,  "/presence.json")          => Future.successful(HttpResponse(status = StatusCodes.OK, entity = HttpBody(roomsArtifact)))
+      case (GET,  "/room/22222/recent.json") => Future.successful(HttpResponse(status = StatusCodes.OK, entity = HttpBody(messagesArtifact)))
+      case (GET,  "/rooms.json")             => Future.successful(HttpResponse(status = StatusCodes.OK, entity = HttpBody(roomsArtifact)))
+      case (GET,  "/room/22222.json")        => Future.successful(HttpResponse(status = StatusCodes.OK, entity = HttpBody(firstRoom.toString)))
+      case (POST, "/room/22222/join.json")   => Future.successful(HttpResponse(status = StatusCodes.OK))
+      case (POST, "/room/22222/leave.json")  => Future.successful(HttpResponse(status = StatusCodes.OK))
+      case (PUT,  "/room/22222.json")        => Future.successful(HttpResponse(status = StatusCodes.OK))
+      case (POST, "/room/22222/speak.json")  => Future.successful(HttpResponse(status = StatusCodes.Created))
+      case (GET,  "/users/me.json")          => Future.successful(HttpResponse(status = StatusCodes.OK, entity = HttpBody(meArtifact)))
+      case (GET,  "/users/5555.json")        => Future.successful(HttpResponse(status = StatusCodes.OK, entity = HttpBody(userArtifact)))
+      case _                                 => Future.successful(HttpResponse(status = StatusCodes.NotFound))
     }
 
   }
@@ -196,7 +193,7 @@ class BivouacSpec extends Specification with Bivouac {
           "type": "TimestampMessage",
           "room_id": 33333,
           "created_at": "2011/09/13 15:40:00 +0000",
-          "id": 409398730,
+          "id": 1,
           "body": null,
           "user_id": null
         },
@@ -204,7 +201,7 @@ class BivouacSpec extends Specification with Bivouac {
           "type": "EnterMessage",
           "room_id": 33333,
           "created_at": "2011/09/13 15:44:33 +0000",
-          "id": 409398731,
+          "id": 2,
           "body": null,
           "user_id": 12345
         },
@@ -212,7 +209,7 @@ class BivouacSpec extends Specification with Bivouac {
           "type": "TextMessage",
           "room_id": 33333,
           "created_at": "2011/09/14 16:33:21 +0000",
-          "id": 410124653,
+          "id": 3,
           "body": "anyone still having problems getting into the room?",
           "user_id": 45347
         },
@@ -220,7 +217,7 @@ class BivouacSpec extends Specification with Bivouac {
           "type": "TextMessage",
           "room_id": 33333,
           "created_at": "2011/09/14 17:04:03 +0000",
-          "id": 410149236,
+          "id": 4,
           "body": "i am guessing some people are just not used to signing in and using this tool",
           "user_id": 23423423
         },
@@ -228,7 +225,7 @@ class BivouacSpec extends Specification with Bivouac {
           "type": "KickMessage",
           "room_id": 33333,
           "created_at": "2011/09/14 17:40:19 +0000",
-          "id": 410176731,
+          "id": 5,
           "body": null,
           "user_id": 935596
         }
@@ -237,89 +234,3 @@ class BivouacSpec extends Specification with Bivouac {
     """
 }
 
-//  override val mockServer =
-//    path("/account.json") {
-//      produce(application/json) {
-//        get { request: HttpRequest[ByteChunk] =>
-//          Future(HttpResponse[JValue](content = Some(accountArtifact)))
-//        }
-//      }
-//    } ~
-//    path("/rooms.json") {
-//      produce(application/json) {
-//        get { request: HttpRequest[ByteChunk] =>
-//          Future(HttpResponse[JValue](content = Some(roomsArtifact)))
-//        }
-//      }
-//    } ~
-//    path("/room/33333.json") {
-//      produce(application/json) {
-//        get { request: HttpRequest[ByteChunk] =>
-//          val r = JObject(JField("room", (roomsArtifact \ "rooms" --> classOf[JArray]).elements.head) :: Nil)
-//          Future(HttpResponse[JValue](content = Some(r)))
-//        }
-//      }
-//    } ~
-//    path("/room/33333/recent.json") {
-//      produce(application/json) {
-//        get { request: HttpRequest[ByteChunk] =>
-//          Future(HttpResponse[JValue](content = Some(messagesArtifact)))
-//        }
-//      }
-//    } ~
-//    path("/room/33333/join.json") {
-//      produce(application/json) {
-//        post { request: HttpRequest[ByteChunk] =>
-//          Future(HttpResponse[JValue]())
-//        }
-//      }
-//    } ~
-//    path("/room/33333/leave.json") {
-//      produce(application/json) {
-//        post { request: HttpRequest[ByteChunk] =>
-//          Future(HttpResponse[JValue]())
-//        }
-//      }
-//    } ~
-//    path("/room/33333/speak.json") {
-//      jvalue {
-//        post { request: HttpRequest[Future[JValue]] =>
-//          request.content match {
-//            case Some(future) =>
-//            future.map { c =>
-//              val msg = JObject(JField("message", JObject(
-//                JField("id", JInt(1234)) ::
-//                JField("user_id", JInt(1234)) ::
-//                JField("room_id", JInt(roomId)) ::
-//                JField("type", JString("TextMessage")) ::
-//                JField("created_at", JString("2011/09/14 21:20:11 +0000")) ::
-//                JField("body", JString((c \\ "body" --> classOf[JString]).value)) :: Nil)) :: Nil)
-//              HttpResponse[JValue](status = Created, content = Some(msg))
-//            }
-//            case None =>
-//            Future(HttpResponse[JValue](content = None))
-//          }
-//        }
-//      }
-//    } ~
-//    path("/presence.json") {
-//      produce(application/json) {
-//        get { request: HttpRequest[ByteChunk] =>
-//          Future(HttpResponse[JValue](content = Some(roomsArtifact)))
-//        }
-//      }
-//    } ~
-//    path("/users/me.json") {
-//      produce(application/json) {
-//        get { request: HttpRequest[ByteChunk] =>
-//          Future(HttpResponse[JValue](content = Some(meArtifact)))
-//        }
-//      }
-//    } ~
-//    path("/users/5555.json") {
-//      produce(application/json) {
-//        get { request: HttpRequest[ByteChunk] =>
-//          Future(HttpResponse[JValue](content = Some(userArtifact)))
-//        }
-//      }
-//    }
