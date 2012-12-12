@@ -26,11 +26,13 @@ object TestApp {
       recentMessages(roomId) map (println)
 
     for {
-      _ <- printMe
+//      _ <- printMe
 //      _ <- printRooms
-      _ <- printRoom(497180)
-      _ <- printRecent(497180)
-      _ <- Future(println("terminating..."))
-    } yield sys.exit
+      _ <- printRoom(534291)
+//      _ <- printRecent(497180)
+      _ <- leaveRoom(534291)
+      _ <- joinRoom(534291)
+      _ <- live(534291, println)
+    } yield true //sys.exit
   }
 }

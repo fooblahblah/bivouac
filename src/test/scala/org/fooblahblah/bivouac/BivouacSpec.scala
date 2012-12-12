@@ -1,5 +1,6 @@
 package org.fooblahblah.bivouac
 
+import akka.actor._
 import java.util.concurrent.TimeUnit
 import model.Model._
 import org.junit.runner._
@@ -22,9 +23,12 @@ class BivouacSpec extends Specification with Bivouac {
   val roomId         = 22222
   val userId         = 5555
 
+  val streamingClient = system.actorOf(Props[MockStreamingActor])
+
+
   "Bivouac" should {
     "Form Authorization header with token" in {
-      val h = authorizationHeader
+      val h = authorizationCreds
       h.toString must startWith("Basic ")
     }
 
@@ -110,7 +114,6 @@ class BivouacSpec extends Specification with Bivouac {
       case (GET,  "/users/5555.json")        => Future.successful(HttpResponse(status = StatusCodes.OK, entity = HttpBody(userArtifact)))
       case _                                 => Future.successful(HttpResponse(status = StatusCodes.NotFound))
     }
-
   }
 
   val accountArtifact = """
@@ -234,3 +237,8 @@ class BivouacSpec extends Specification with Bivouac {
     """
 }
 
+class MockStreamingActor extends Actor {
+  def receive = {
+    case _ => sys.error("mock streaming not implemented")
+  }
+}
