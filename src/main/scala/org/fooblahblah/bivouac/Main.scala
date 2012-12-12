@@ -1,21 +1,13 @@
 package org.fooblahblah.bivouac
 
-import akka.dispatch.Future
-import blueeyes.bkka.AkkaDefaults
+import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits.global
 
-object TestApp extends Bivouac {
-  var apiKey: Option[String] = None
-  var domain: Option[String] = None
-
-  lazy val config = CampfireConfig(
-    apiKey.getOrElse(sys.error("apiKey was uninitialized")),
-    domain.getOrElse(sys.error("domain was uninitialized")))
+object TestApp {
+  val client = Bivouac()
 
   def main(args: Array[String]) {
-    assert(args.length == 2)
-
-    apiKey = Some(args(0))
-    domain = Some(args(1))
+    import client._
 
     def printRooms: Future[Unit] =
       rooms map { rooms =>
@@ -24,14 +16,17 @@ object TestApp extends Bivouac {
         }
       }
 
-    def printAccount: Future[Unit] =
-      account map (println)
+    def printMe: Future[Unit] =
+      me map (println)
+
+    def printRoom(roomId: Int) =
+      room(roomId) map (println)
 
     for {
-      _ <- printRooms
-      // _ <- printAccount
+      _ <- printMe
+//      _ <- printRooms
+      _ <- printRoom(497180)
       _ <- Future(println("terminating..."))
-      _ <- Future(AkkaDefaults.actorSystem.shutdown())
     } yield sys.exit
   }
 }

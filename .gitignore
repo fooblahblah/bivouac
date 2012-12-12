@@ -1,7 +1,11 @@
 *~
 .target
+.classpath
+.project
 .scala_dependencies
 bin
 target
 project/boot
 .ensime*
+.cache
+*.launch
