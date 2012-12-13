@@ -25,9 +25,9 @@ object TestApp {
     def printRecent(roomId: Int) =
       recentMessages(roomId) map (println)
 
-    val roomId = 399408 // Test
+//    val roomId = 399408 // Test
 //    val roomId = 537356 // data_engineering
-//    val roomId = 454626 // Boulder
+    val roomId = 454626 // Boulder
 
     for {
 //      _ <- printMe

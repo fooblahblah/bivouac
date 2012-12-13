@@ -2,7 +2,9 @@ seq(com.github.retronym.SbtOneJar.oneJarSettings: _*)
 
 name := "bivouac"
 
-version := "1.0"
+organization := "org.fooblahblah"
+
+version := "1.0.0"
 
 scalaVersion := "2.10.0-RC3"
 
