@@ -181,10 +181,15 @@ object Bivouac {
   import SSLContextProvider._
   import scala.util.control.Exception._
 
-  def apply() = new Bivouac {
+  def apply(): Bivouac = {
     val config           = ConfigFactory.load
-    val campfireConfig   = CampfireConfig(config.getString("token"), config.getString("domain"))
     val reconnectTimeout = failAsValue(classOf[Exception])(config.getInt("reconnect-timeout"))(5)
+
+    apply(config.getString("domain"), config.getString("token"), reconnectTimeout)
+  }
+
+  def apply(domain: String, token: String, reconnectTimeout: Int = 5): Bivouac = new Bivouac {
+    val campfireConfig   = CampfireConfig(token, domain)
 
     val ioBridge = IOExtension(system).ioBridge
     val httpClient = system.actorOf(Props(new HttpClient(ioBridge)))
