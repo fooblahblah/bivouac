@@ -34,8 +34,8 @@ object TestApp {
 //      _ <- printRooms
       _ <- printRoom(roomId)
 //      _ <- printRecent(497180)
-      _ <- leaveRoom(roomId)
-      _ <- joinRoom(roomId)
+      _ <- leave(roomId)
+      _ <- join(roomId)
       _ <- live(roomId, println)
     } yield true //sys.exit
   }

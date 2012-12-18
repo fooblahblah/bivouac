@@ -69,12 +69,12 @@ class BivouacSpec extends Specification with Bivouac {
     }
 
     "Support joining a room" in {
-      val result = Await.result(joinRoom(roomId), Duration(1, TimeUnit.SECONDS))
+      val result = Await.result(join(roomId), Duration(1, TimeUnit.SECONDS))
       result === true
     }
 
     "Support leaving a room" in {
-      val result = Await.result(leaveRoom(roomId), Duration(1, TimeUnit.SECONDS))
+      val result = Await.result(leave(roomId), Duration(1, TimeUnit.SECONDS))
       result === true
     }
 

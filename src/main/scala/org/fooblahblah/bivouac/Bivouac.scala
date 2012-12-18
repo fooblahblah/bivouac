@@ -97,12 +97,12 @@ trait Bivouac {
   }
 
 
-  def joinRoom(roomId: Int): Future[Boolean] = POST(s"/room/${roomId}/join.json") map { response =>
+  def join(roomId: Int): Future[Boolean] = POST(s"/room/${roomId}/join.json") map { response =>
     response.status == StatusCodes.OK
   }
 
 
-  def leaveRoom(roomId: Int): Future[Boolean] = POST(s"/room/${roomId}/leave.json") map { response =>
+  def leave(roomId: Int): Future[Boolean] = POST(s"/room/${roomId}/leave.json") map { response =>
     response.status == StatusCodes.OK
   }
 
