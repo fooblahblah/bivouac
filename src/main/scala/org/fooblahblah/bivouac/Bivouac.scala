@@ -170,7 +170,7 @@ trait Bivouac {
       }
     }
 
-    val streamer = system.actorOf(Props(new Streamer), "streamer")
+    val streamer = system.actorOf(Props(new Streamer), s"streamer-${roomId}")
     streamer ! Connect
 
     streamer
