@@ -115,7 +115,7 @@ trait Bivouac {
   }
 
 
-  def speak(roomId: Int, message: String) = {
+  def speak(roomId: Int, message: String): Future[Boolean] = {
     val body = HttpBody(ContentType(`application/json`), Json.obj("message" -> Json.obj("type" -> "TextMessage", "body" -> message)).toString)
     POST(s"/room/${roomId}/speak.json", body) map { response =>
       response.status == StatusCodes.Created
@@ -129,7 +129,7 @@ trait Bivouac {
     }
   }
 
-  def live(roomId: Int, fn: (Message) => Unit) = {
+  def live(roomId: Int, fn: (Message) => Unit): ActorRef = {
 
     class Streamer extends Actor {
       var retrying: Boolean = false
@@ -173,7 +173,7 @@ trait Bivouac {
     val streamer = system.actorOf(Props(new Streamer), "streamer")
     streamer ! Connect
 
-    Future(true)
+    streamer
   }
 }
 

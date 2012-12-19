@@ -2,6 +2,7 @@ package org.fooblahblah.bivouac
 
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
+import akka.actor.PoisonPill
 
 object TestApp {
   val client = Bivouac()
@@ -36,7 +37,8 @@ object TestApp {
 //      _ <- printRecent(497180)
       _ <- leave(roomId)
       _ <- join(roomId)
-      _ <- live(roomId, println)
+      streamer <- Future(live(roomId, println))
+//      _ <- Future(streamer ! PoisonPill)
     } yield true //sys.exit
   }
 }
