@@ -108,17 +108,19 @@ trait Bivouac {
 
 
   def updateRoomTopic(roomId: Int, topic: String): Future[Boolean] = {
-    val body = HttpBody(ContentType(`application/json`), Json.obj("topic" -> JsString(topic)).toString)
+    val body = HttpBody(ContentType(`application/json`), Json.obj("room" -> Json.obj("topic" -> JsString(topic))).toString)
     PUT(s"/room/${roomId}.json", body) map { response =>
       response.status == StatusCodes.OK
     }
   }
 
 
-  def speak(roomId: Int, message: String) = POST(s"/room/${roomId}/speak.json") map { response =>
-    response.status == StatusCodes.Created
+  def speak(roomId: Int, message: String) = {
+    val body = HttpBody(ContentType(`application/json`), Json.obj("message" -> Json.obj("type" -> "TextMessage", "body" -> message)).toString)
+    POST(s"/room/${roomId}/speak.json", body) map { response =>
+      response.status == StatusCodes.Created
+    }
   }
-
 
   def recentMessages(roomId: Int): Future[List[Message]] = GET(s"/room/${roomId}/recent.json") map { response =>
     response.status match {
