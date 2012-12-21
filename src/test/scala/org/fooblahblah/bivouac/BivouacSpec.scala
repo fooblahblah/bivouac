@@ -17,6 +17,8 @@ import spray.http._
 @RunWith(classOf[JUnitRunner])
 class BivouacSpec extends Specification with Bivouac {
 
+  val system = ActorSystem()
+
   sequential
 
   val campfireConfig = CampfireConfig("123456", "foo")

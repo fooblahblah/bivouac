@@ -27,7 +27,9 @@ import spray.http.HttpHeaders.Authorization
 
 trait Bivouac {
 
-  implicit lazy val system = ActorSystem()
+//  implicit lazy val system = ActorSystem()
+
+  implicit def system: ActorSystem
 
   protected lazy val logger = Logging(system, "Bivouac")
 
@@ -170,7 +172,7 @@ trait Bivouac {
       }
     }
 
-    val streamer = system.actorOf(Props(new Streamer), s"streamer-${roomId}")
+    val streamer = system.actorOf(Props(new Streamer), s"room-${roomId}")
     streamer ! Connect
 
     streamer
@@ -183,14 +185,17 @@ object Bivouac {
   import SSLContextProvider._
   import scala.util.control.Exception._
 
-  def apply(): Bivouac = {
+  def apply()(implicit system: ActorSystem): Bivouac = {
     val config           = ConfigFactory.load
     val reconnectTimeout = failAsValue(classOf[Exception])(config.getInt("reconnect-timeout"))(5)
 
     apply(config.getString("domain"), config.getString("token"), reconnectTimeout)
   }
 
-  def apply(domain: String, token: String, reconnectTimeout: Int = 5): Bivouac = new Bivouac {
+  def apply(domain: String, token: String, reconnectTimeout: Int = 5)(implicit system_ : ActorSystem): Bivouac = new Bivouac {
+
+    val system = system_
+
     val campfireConfig   = CampfireConfig(token, domain)
 
     val ioBridge = IOExtension(system).ioBridge

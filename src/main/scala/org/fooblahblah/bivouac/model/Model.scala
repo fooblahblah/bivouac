@@ -23,7 +23,6 @@ object Model {
 
   case class User(id: Int, name: String, email: String, admin: Boolean, avatarUrl: String, userType: String, createdAt: Date)
 
-
   implicit val customDateReads = dateReads("yyyy/MM/dd HH:mm:ss Z")
 
   implicit val accountReads: Reads[Account] = (

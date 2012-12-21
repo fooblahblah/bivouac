@@ -1,10 +1,11 @@
 package org.fooblahblah.bivouac
 
+import akka.actor._
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
-import akka.actor.PoisonPill
 
 object TestApp {
+  implicit val system = ActorSystem()
   val client = Bivouac()
 
   def main(args: Array[String]) {
