@@ -201,10 +201,7 @@ object Bivouac {
     val ioBridge = IOExtension(system).ioBridge
     val httpClient = system.actorOf(Props(new HttpClient(ioBridge)))
 
-    val conduit = system.actorOf(
-      props = Props(new HttpConduit(httpClient, hostName, 443, true)),
-      name = "http-conduit"
-    )
+    val conduit = system.actorOf(Props(new HttpConduit(httpClient, hostName, 443, true)))
 
     val client =
       addCredentials(authorizationCreds) ~>
@@ -217,8 +214,6 @@ object Bivouac {
       spray.can.client.request-timeout = 0s
       """
     val settings = ClientSettings(ConfigFactory.parseString(clientConfig))
-    val streamingClient = system.actorOf(props = Props(
-        new HttpClient(ioBridge, settings)),
-        name = "streaming-client")
+    val streamingClient = system.actorOf(Props(new HttpClient(ioBridge, settings)))
   }
 }
