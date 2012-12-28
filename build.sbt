@@ -9,8 +9,9 @@ version := "1.0.0"
 scalaVersion := "2.10.0"
 
 resolvers ++= Seq(
-  "typesafe repo" at "http://repo.typesafe.com/typesafe/maven-releases",
-  "spray repo" at "http://repo.spray.io"
+  "fooblahblah repo" at "https://raw.github.com/fooblahblah/maven-repo/master",
+  "typesafe repo"    at "http://repo.typesafe.com/typesafe/maven-releases",
+  "spray repo"       at "http://repo.spray.io"
 )
 
 libraryDependencies ++= Seq(
@@ -23,3 +24,9 @@ libraryDependencies ++= Seq(
   "org.scalaz"                  %% "scalaz"                   % "7.0.0-M7",
   "play"                        %% "play-json"                % "2.1-RC1"
 )
+
+javacOptions ++= Seq("-source","1.6","-target","1.6", "-encoding", "UTF-8")
+
+javacOptions in doc := Seq("-source", "1.6")
+
+publishTo := Some(Resolver.file("file",  new File(Path.userHome.absolutePath + "/workspace/maven-repo")))
