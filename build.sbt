@@ -21,5 +21,5 @@ libraryDependencies ++= Seq(
   "org.apache.directory.studio" %  "org.apache.commons.codec" % "1.6",
   "org.specs2"                  %% "specs2"                   % "1.13",
   "org.scalaz"                  %% "scalaz"                   % "7.0.0-M7",
-  "play"                        %% "play"                     % "2.1-RC1"
+  "play"                        %% "play-json"                % "2.1-RC1"
 )
