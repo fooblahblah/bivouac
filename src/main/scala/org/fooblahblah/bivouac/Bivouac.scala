@@ -27,8 +27,6 @@ import spray.http.HttpHeaders.Authorization
 
 trait Bivouac {
 
-//  implicit lazy val system = ActorSystem()
-
   implicit def system: ActorSystem
 
   protected lazy val logger = Logging(system, "Bivouac")
@@ -134,6 +132,8 @@ trait Bivouac {
   def live(roomId: Int, fn: (Message) => Unit): ActorRef = {
 
     class Streamer extends Actor {
+      val uri = s"/room/${roomId}/live.json"
+
       var retrying: Boolean = false
 
       def reconnect() {
@@ -144,7 +144,7 @@ trait Bivouac {
 
       def receive = {
         case Connect =>
-          logger.info(s"Attempting to connect: ${streamingHostName}")
+          logger.info(s"Attempting to connect: $streamingHostName$uri")
           streamingClient ! Connect(streamingHostName, 443, HttpClient.SslEnabled)
           sender ! true
 
@@ -153,9 +153,9 @@ trait Bivouac {
           reconnect()
 
         case Connected(connection) =>
-          logger.info(s"Connected to stream: ${streamingHostName}")
+          logger.info(s"Connected to stream: $streamingHostName$uri")
           retrying = false
-          val request = HttpRequest(method = HttpMethods.GET, uri = s"/room/${roomId}/live.json", headers = Authorization(authorizationCreds) :: Nil)
+          val request = HttpRequest(method = HttpMethods.GET, uri = uri, headers = Authorization(authorizationCreds) :: Nil)
           connection.handler ! request
 
         case m: MessageChunk if(!m.bodyAsString.trim.isEmpty) =>
@@ -172,7 +172,7 @@ trait Bivouac {
       }
     }
 
-    val streamer = system.actorOf(Props(new Streamer), s"room-${roomId}")
+    val streamer = system.actorOf(Props(new Streamer))
     streamer ! Connect
 
     streamer
