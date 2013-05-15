@@ -6,7 +6,7 @@ object BivouacBuild extends Build {
   lazy val buildSettings = Defaults.defaultSettings ++ Seq(
     organization := "org.fooblahblah",
     version      := "1.0.0",
-    scalaVersion := "2.10.0",
+    scalaVersion := "2.10.1",
 
     resolvers ++= Seq(
       "typesafe repo" at "http://repo.typesafe.com/typesafe/maven-releases",
