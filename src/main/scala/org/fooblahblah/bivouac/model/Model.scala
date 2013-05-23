@@ -1,7 +1,6 @@
 package org.fooblahblah.bivouac.model
 
 import java.util.Date
-import org.fooblahblah.bivouac.util.json.FormatExt._
 import play.api.libs.json._
 import play.api.libs.json.Reads._
 import play.api.libs.json.util._
@@ -56,7 +55,7 @@ object Model {
     (__ \ "locked").read[Boolean] ~
     (__ \ "created_at").read[Date](customDateReads) ~
     (__ \ "updated_at").read[Date](customDateReads) ~
-    (__ \ "users").readOpt(list[User]))(Room)
+    (__ \ "users").readNullable(list[User]))(Room)
 
   implicit val listRoomReads: Reads[List[Room]] = ((__ \ "rooms").read(list[Room]))
 
@@ -64,9 +63,9 @@ object Model {
   implicit val messageReads: Reads[Message] = (
     (__ \ "id").read[Int] ~
     (__ \ "room_id").read[Int] ~
-    (__ \ "user_id").readNullableOpt[Int] ~
+    (__ \ "user_id").readNullable[Int] ~
     (__ \ "type").read[String] ~
-    (__ \ "body").readNullableOpt[String] ~
+    (__ \ "body").readNullable[String] ~
     (__ \ "created_at").read[Date](customDateReads))(Message)
 
   implicit val listMessageReads: Reads[List[Message]] = ((__ \ "messages").read(list[Message]))

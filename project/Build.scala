@@ -20,7 +20,8 @@ object BivouacBuild extends Build {
       "junit"                       %  "junit"                    % "4.11",
       "org.apache.directory.studio" %  "org.apache.commons.codec" % "1.6",
       "org.specs2"                  %% "specs2"                   % "1.13"
-    )
+    ),
+    scalacOptions ++= Seq("-language:postfixOps", "-language:implicitConversions")
   )
 
   lazy val playJson = RootProject(uri("https://github.com/victorops/play-json.git"))
