@@ -36,8 +36,10 @@ object TestApp {
 //      _ <- printRecent(497180)
       _ <- leave(roomId)
       _ <- join(roomId)
-      streamer <- Future(live(roomId, println))
+      _ <- speak(roomId, "Hello, world!")
+//      streamer <- Future(live(roomId, println))
 //      _ <- Future(streamer ! PoisonPill)
-    } yield true //sys.exit
+    } yield true
+//    sys.exit
   }
 }

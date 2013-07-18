@@ -115,8 +115,9 @@ trait Bivouac {
   }
 
 
-  def speak(roomId: Int, message: String): Future[Boolean] = {
-    val body = HttpBody(ContentType(`application/json`), Json.obj("message" -> Json.obj("type" -> "TextMessage", "body" -> message)).toString)
+  def speak(roomId: Int, message: String, paste: Boolean = false): Future[Boolean] = {
+    val msgType = if(paste) "PasteMessage" else "TextMessage"
+    val body = HttpBody(ContentType(`application/json`), Json.obj("message" -> Json.obj("type" -> msgType, "body" -> message)).toString)
     POST(s"/room/${roomId}/speak.json", body) map { response =>
       response.status == StatusCodes.Created
     }
@@ -196,7 +197,7 @@ object Bivouac {
 
     val system = system_
 
-    val campfireConfig   = CampfireConfig(token, domain)
+    val campfireConfig = CampfireConfig(token, domain)
 
     val ioBridge = IOExtension(system).ioBridge
     val httpClient = system.actorOf(Props(new HttpClient(ioBridge)))
