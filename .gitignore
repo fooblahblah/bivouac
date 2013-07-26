@@ -2,6 +2,7 @@
 .target
 .classpath
 .project
+.settings
 .scala_dependencies
 bin
 target
