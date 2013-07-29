@@ -29,13 +29,13 @@ object TestApp {
 
     for {
       _ <- printMe
-      _ <- printRooms
-      _ <- printRoom(roomId)
-      _ <- printRecent(roomId)
+//      _ <- printRooms
+//      _ <- printRoom(roomId)
+//      _ <- printRecent(roomId)
       _ <- leave(roomId)
       _ <- join(roomId)
-      _ <- speak(roomId, "Hello, world!")
-      streamer <- Future(live(roomId, println))
+//      _ <- speak(roomId, "Hello, world!")
+      streamer <- live(roomId, println)
 //      _ <- Future(streamer ! PoisonPill)
     } yield sys.exit
   }
