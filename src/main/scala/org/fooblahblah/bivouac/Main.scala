@@ -1,11 +1,9 @@
 package org.fooblahblah.bivouac
 
-import akka.actor._
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 
 object TestApp {
-  implicit val system = ActorSystem()
   val client = Bivouac()
 
   def main(args: Array[String]) {
@@ -30,16 +28,15 @@ object TestApp {
     val roomId = 562997
 
     for {
-//      _ <- printMe
-//      _ <- printRooms
+      _ <- printMe
+      _ <- printRooms
       _ <- printRoom(roomId)
-//      _ <- printRecent(497180)
+      _ <- printRecent(roomId)
       _ <- leave(roomId)
       _ <- join(roomId)
       _ <- speak(roomId, "Hello, world!")
-//      streamer <- Future(live(roomId, println))
+      streamer <- Future(live(roomId, println))
 //      _ <- Future(streamer ! PoisonPill)
-    } yield true
-//    sys.exit
+    } yield sys.exit
   }
 }
