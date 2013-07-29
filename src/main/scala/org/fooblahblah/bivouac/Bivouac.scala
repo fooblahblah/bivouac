@@ -160,12 +160,6 @@ trait Bivouac {
 
           def onCompleted(res: Response) = {
             logger.info(s"Streaming complete for room $roomId")
-            println("Completed")
-          }
-
-          override def onStatusReceived(status: HttpResponseStatus) = {
-            println(status)
-            super.onStatusReceived(status)
           }
         })
       }
