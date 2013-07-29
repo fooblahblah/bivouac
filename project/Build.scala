@@ -13,6 +13,7 @@ object BivouacBuild extends Build {
     ),
 
     libraryDependencies ++= Seq(
+      "ch.qos.logback"              % "logback-classic"           % "1.0.13",
       "com.typesafe"                %  "config"                   % "1.0.0",
       "junit"                       %  "junit"                    % "4.11",
       "net.databinder.dispatch"     %% "dispatch-core"            % "0.11.0",

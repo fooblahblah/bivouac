@@ -136,7 +136,7 @@ trait Bivouac {
   }
 
 
-  def live(roomId: Int, fn: (Message) => Unit) = {
+  def live(roomId: Int, fn: (Message) => Unit): Future[Unit] = {
     val path       = s"/room/${roomId}/live.json"
     val req        = streamingRequest(path).GET.toRequest
 
@@ -160,16 +160,27 @@ trait Bivouac {
 
           def onCompleted(res: Response) = {
             logger.info(s"Streaming complete for room $roomId")
+            println("Completed")
           }
 
-          override def onThrowable(t: Throwable) {
-            logger.error(s"Streaming error encountered for room: $roomId", t)
+          override def onStatusReceived(status: HttpResponseStatus) = {
+            println(status)
+            super.onStatusReceived(status)
           }
         })
       }
     }
 
-    connect
+    connect flatMap { f =>
+      logger.info(s"Streaming connection for room $roomId exited. Sleeping 15s and reconnecting..")
+      Thread.sleep(15000)
+      live(roomId, fn)
+    } recoverWith {
+      case t =>
+        logger.info(s"Streaming connection for room $roomId exited with a failure. Sleeping 15s and reconnecting..", t)
+        Thread.sleep(15000)
+        live(roomId, fn)
+    }
   }
 }
 
