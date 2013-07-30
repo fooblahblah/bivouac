@@ -22,6 +22,8 @@ class BivouacSpec extends Specification with Bivouac {
   val roomId         = 22222
   val userId         = 5555
 
+  val reconnectTimeout = Duration("5s")
+
   "Bivouac" should {
     "Support account" in {
       val result = Await.result(account, Duration(1, TimeUnit.SECONDS))

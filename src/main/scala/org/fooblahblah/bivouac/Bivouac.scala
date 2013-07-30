@@ -18,6 +18,8 @@ import scala.util.Try
 import scala.util.Failure
 import java.util.concurrent.atomic.AtomicBoolean
 import com.ning.http.client.HttpResponseStatus
+import scala.concurrent.Promise
+import scala.concurrent.duration.Duration
 
 
 trait Client {
@@ -32,10 +34,14 @@ trait Client {
 
 
 trait Bivouac {
+  val OK      = 200
+  val CREATED = 201
 
   protected lazy val logger = LoggerFactory.getLogger(classOf[Bivouac])
 
   protected val client: Client
+
+  protected val reconnectTimeout: Duration
 
   protected def campfireConfig: CampfireConfig
 
@@ -49,9 +55,6 @@ trait Bivouac {
     h.setUrl(h.url + path)
   }
 
-
-  val OK      = 200
-  val CREATED = 201
 
   def account: Future[Option[Account]] = client.GET("/account.json") map { response =>
     response match {
@@ -136,11 +139,14 @@ trait Bivouac {
   }
 
 
-  def live(roomId: Int, fn: (Message) => Unit): Future[Unit] = {
-    val path       = s"/room/${roomId}/live.json"
-    val req        = streamingRequest(path).GET.toRequest
+  def live(roomId: Int, fn: (Message) => Unit): () => Unit = {
+    val path   = s"/room/${roomId}/live.json"
+    val req    =  streamingRequest(path).GET.toRequest
+    val abortP = Promise[Unit]
 
     def connect: Future[Unit] = {
+      logger.info(s"Connecting to room $roomId")
+
       join(roomId) flatMap { joined =>
         Http(req, new AsyncCompletionHandler[Unit] {
           override def onBodyPartReceived(part: HttpResponseBodyPart) = {
@@ -155,26 +161,33 @@ trait Bivouac {
               }
             }
 
-            AsyncHandler.STATE.CONTINUE
+            if(!abortP.isCompleted) AsyncHandler.STATE.CONTINUE
+            else AsyncHandler.STATE.ABORT
           }
 
           def onCompleted(res: Response) = {
-            logger.info(s"Streaming complete for room $roomId")
+            tryReconnect(s"Streaming exited for room $roomId")
+          }
+
+          override def onThrowable(t: Throwable) {
+            tryReconnect(s"Stream for room $roomId exited ${t.getMessage}. Retrying in 15s")
           }
         })
       }
     }
 
+    def tryReconnect(msg: String): Future[Unit] = if(!abortP.isCompleted) {
+      logger.info(msg)
+      Thread.sleep(reconnectTimeout.toMillis)
+      connect
+    } else Future.successful()
+
     connect flatMap { f =>
-      logger.info(s"Streaming connection for room $roomId exited. Sleeping 15s and reconnecting..")
-      Thread.sleep(15000)
-      live(roomId, fn)
-    } recoverWith {
-      case t =>
-        logger.info(s"Streaming connection for room $roomId exited with a failure. Sleeping 15s and reconnecting..", t)
-        Thread.sleep(15000)
-        live(roomId, fn)
+      tryReconnect(s"Streaming connection for room $roomId exited. Sleeping 15s and reconnecting..")
     }
+
+
+    () => abortP.success()
   }
 }
 
@@ -182,14 +195,17 @@ trait Bivouac {
 object Bivouac {
 
   def apply(): Bivouac = {
-    val config = ConfigFactory.load
-    apply(config.getString("domain"), config.getString("token"))
+    val config           = ConfigFactory.load
+    val reconnectTimeout = Duration(failAsValue(classOf[Exception])(config.getString("reconnect-timeout"))("15s"))
+
+    apply(config.getString("domain"), config.getString("token"), reconnectTimeout)
   }
 
 
-  def apply(domain: String, token: String): Bivouac = new Bivouac {
-
+  def apply(domain: String, token: String, timeout: Duration = Duration("15s")): Bivouac = new Bivouac {
     val campfireConfig = CampfireConfig(token, domain)
+
+    val reconnectTimeout = timeout
 
     val client = new Client {
       def GET(path: String) = Http(campfireRequest(path).GET) map { response =>
