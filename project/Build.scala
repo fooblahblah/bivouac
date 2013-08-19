@@ -9,22 +9,25 @@ object BivouacBuild extends Build {
     scalaVersion := "2.10.2",
 
     resolvers ++= Seq(
-      "typesafe repo" at "http://repo.typesafe.com/typesafe/maven-releases"
+      "typesafe repo" at "http://repo.typesafe.com/typesafe/maven-releases",
+      "VictorOps Repository" at "https://raw.github.com/fooblahblah/maven-repo/master/releases"
     ),
+
+    publishTo := Some(Resolver.file("file",  new File("../maven-repo/releases"))),
 
     libraryDependencies ++= Seq(
       "ch.qos.logback"              % "logback-classic"           % "1.0.13",
       "com.typesafe"                %  "config"                   % "1.0.0",
       "junit"                       %  "junit"                    % "4.11",
       "net.databinder.dispatch"     %% "dispatch-core"            % "0.11.0",
+      "play"                        %% "play-json"                % "2.1.3",
       "org.apache.directory.studio" %  "org.apache.commons.codec" % "1.6",
       "org.specs2"                  %% "specs2"                   % "1.13" % "test",
       "org.slf4j"                   %  "slf4j-api"                % "1.7.5"
     ),
+
     scalacOptions ++= Seq("-language:postfixOps", "-language:implicitConversions")
   )
 
-  lazy val playJson = RootProject(uri("https://github.com/victorops/play-json.git"))
-
-  lazy val root = Project(id = "bivouac", base = file("."), settings = buildSettings) dependsOn (playJson)
+  lazy val root = Project(id = "bivouac", base = file("."), settings = buildSettings)
 }
