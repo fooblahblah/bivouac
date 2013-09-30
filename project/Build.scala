@@ -29,5 +29,7 @@ object BivouacBuild extends Build {
     scalacOptions ++= Seq("-language:postfixOps", "-language:implicitConversions")
   )
 
-  lazy val root = Project(id = "bivouac", base = file("."), settings = buildSettings)
+  lazy val playJson = RootProject(uri("https://github.com/victorops/play-json.git#abf0ea9dcb23a498cfae4fcd0dc06fb07e05b474"))
+
+  lazy val root = Project(id = "bivouac", base = file("."), settings = buildSettings) dependsOn (playJson)
 }
